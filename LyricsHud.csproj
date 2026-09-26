@@ -44,6 +44,20 @@
       <HintPath>$(GTManaged)/UnityEngine.XRModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
+
+    <!-- Photon PUN2 references for the song custom-properties broadcast -->
+    <Reference Include="PhotonUnityNetworking">
+      <HintPath>$(GTManaged)/PhotonUnityNetworking.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="PhotonRealtime">
+      <HintPath>$(GTManaged)/PhotonRealtime.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Photon3Unity3D">
+      <HintPath>$(GTManaged)/Photon3Unity3D.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
   </ItemGroup>
 
   <!-- drops the built dll straight into the game's plugin folder -->

@@ -3,6 +3,8 @@ using System.Net;
 using System.Threading;
 using BepInEx;
 using BepInEx.Configuration;
+using ExitGames.Client.Photon;
+using Photon.Pun;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.XR;
@@ -17,12 +19,12 @@ namespace LyricsHud
         public byte[] data;
     }
 
-    [BepInPlugin("local.lyricshud", "Lyrics HUD", "2.0.0")]
+    [BepInPlugin("local.lyricshud", "Lyrics HUD", "2.1.0")]
     public class Plugin : BaseUnityPlugin
     {
         // ---------- config ----------
         ConfigEntry<int> cfgPort, cfgLyricLines;
-        ConfigEntry<bool> cfgStartVisible, cfgShowArt, cfgShowAlbum, cfgShowTime, cfgShowProgress;
+        ConfigEntry<bool> cfgStartVisible, cfgShowArt, cfgShowAlbum, cfgShowTime, cfgShowProgress, cfgBroadcastProps;
         ConfigEntry<PadButton> cfgToggle, cfgPlayPause, cfgNext, cfgPrevious;
         ConfigEntry<float> cfgDistance, cfgHeight, cfgOffsetX, cfgScale;
         ConfigEntry<string> cfgBackground, cfgTextColor, cfgAccent;
@@ -50,6 +52,9 @@ namespace LyricsHud
         string currentArtId;
         string lastTime;
         float nextPoll;
+
+        // ---------- photon song broadcast ----------
+        float nextPropsPush;
 
         int mode; // 0 = helper not running, 1 = nothing playing, 2 = track loaded
         string status = "", title = "", artist = "", album = "", artId = "";
@@ -90,6 +95,9 @@ namespace LyricsHud
                 new ConfigDescription("0 hides lyrics, 1 = current line only, 2 = adds the next line, 3 = adds the previous line too",
                     new AcceptableValueRange<int>(0, 3)));
 
+            cfgBroadcastProps = Config.Bind("Props", "BroadcastSong", true,
+                "share the current song via player custom properties so other mods can see it");
+
             port = cfgPort.Value;
             visible = cfgStartVisible.Value;
             Config.SettingChanged += (s, e) =>
@@ -115,10 +123,9 @@ namespace LyricsHud
             if (Pressed(cfgPrevious.Value)) Send("previous");
 
             EnsureHud();
-            if (root == null) return;
+            if (root == null) { PushSongProps(); return; }
 
             root.SetActive(visible);
-            if (!visible) return;
 
             if (Time.unscaledTime >= nextPoll)
             {
@@ -130,7 +137,10 @@ namespace LyricsHud
             if (current != parsedRaw) ApplyState(current);
 
             ApplyArtResult();
-            UpdateProgress();
+
+            if (visible) UpdateProgress();
+
+            PushSongProps();
         }
 
         // ---------- input ----------
@@ -218,6 +228,30 @@ namespace LyricsHud
                 wc.Proxy = null;
                 return wc.DownloadData("http://127.0.0.1:" + port + path);
             }
+        }
+
+        // ---------- broadcasting the current song over photon ----------
+        void PushSongProps()
+        {
+            if (!cfgBroadcastProps.Value) return;
+            if (Time.unscaledTime < nextPropsPush) return;
+            nextPropsPush = Time.unscaledTime + 1f;
+
+            if (PhotonNetwork.LocalPlayer == null) return;
+
+            bool playing = mode == 2 && status == "Playing";
+            float livePos = pos;
+            if (playing) livePos += Time.unscaledTime - posTime;
+
+            var props = new Hashtable
+            {
+                ["songName"] = mode == 2 ? title : "",
+                ["songArtist"] = mode == 2 ? artist : "",
+                ["songTimestampMs"] = mode == 2 ? Mathf.RoundToInt(livePos * 1000f) : 0,
+                ["songPlaying"] = playing,
+            };
+
+            PhotonNetwork.LocalPlayer.SetCustomProperties(props);
         }
 
         // ---------- applying data ----------
