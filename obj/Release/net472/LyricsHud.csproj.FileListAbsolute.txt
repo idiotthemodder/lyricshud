@@ -1,7 +1,0 @@
-/home/rift/lyricshud/obj/Release/net472/LyricsHud.csproj.AssemblyReference.cache
-/home/rift/lyricshud/obj/Release/net472/LyricsHud.GeneratedMSBuildEditorConfig.editorconfig
-/home/rift/lyricshud/obj/Release/net472/LyricsHud.csproj.CoreCompileInputs.cache
-/home/rift/lyricshud/bin/Release/net472/LyricsHud.dll
-/home/rift/lyricshud/bin/Release/net472/LyricsHud.pdb
-/home/rift/lyricshud/obj/Release/net472/LyricsHud.dll
-/home/rift/lyricshud/obj/Release/net472/LyricsHud.pdb
